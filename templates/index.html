@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Visualization</title>
+    <style>
+        body {
+            font-family: 'Helvetica', sans-serif; /* Set default font for body */
+            background-color: #333; /* Dark grey background */
+            color: white; /* Default text color white */
+            transform: scale(1.5); /* Scale everything by 150% */
+            transform-origin: top left; /* Ensure scaling starts from the top-left corner */
+            width: 66.67%; /* Adjust width to keep layout intact */
+            overflow: hidden; /* Prevent scrollbars from appearing */
+        }
+        h1 {
+            font-family: 'Helvetica', sans-serif; /* Set header font to Helvetica */
+            font-weight: bold; /* Make header bold */
+            text-align: center; /* Center the header */
+        }
+        .input-container {
+            display: flex; /* Use flexbox */
+            flex-direction: column; /* Stack elements vertically */
+            align-items: center; /* Center elements horizontally */
+            margin-top: 20px; /* Space above the input container */
+        }
+        .input-group {
+            display: flex; /* Use flexbox to align label and input */
+            align-items: center; /* Center the label and input vertically */
+            margin-bottom: 10px; /* Space below the input group */
+        }
+        input {
+            font-family: 'Helvetica', sans-serif; /* Set input font to Helvetica */
+            margin: 10px 0; /* Space above and below the input */
+            padding: 5px; /* Add some padding for better usability */
+        }
+        button {
+            font-family: 'Helvetica', sans-serif; /* Set button font to Helvetica */
+            background-color: #555; /* Dark button background */
+            color: white; /* White text on button */
+            border: none; /* Remove border */
+            padding: 5px 10px; /* Add some padding */
+            cursor: pointer; /* Change cursor to pointer */
+        }
+        button:hover {
+            background-color: #777; /* Lighter button background on hover */
+        }
+        .array-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .array-bar {
+            margin: 0 2px;
+            background-color: red; /* Change bar color to red */
+            width: 30px;
+            position: relative; /* To position the number inside the bar */
+        }
+        .array-number {
+            position: absolute;
+            bottom: 100%; /* Position above the bar */
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Helvetica', sans-serif; /* Set number font to Helvetica */
+            font-weight: bold; /* Number font weight */
+            font-size: 12px; /* Adjust as needed */
+            color: white; /* Set number text color to white */
+        }
+    </style>
+</head>
+<body>
+    <h1>
+        <select id="algorithm-select" onchange="updateHeader()" style="background-color: #333; color: white; border: none; font-weight: bold; font-size: 34px; margin-right: 1px;">
+            <option value="bubble">Bubble</option>
+            <option value="quick">Quick</option>
+        </select>
+        Sort Visualization
+    </h1>
+    
+    <div class="input-container">
+        <div class="input-group">
+            <label for="array-input" style="display: none;">Enter comma-separated numbers:</label>
+            <input type="text" id="array-input" placeholder="e.g., 5,3,8,1,2" />
+        </div>
+        <button onclick="startSort()">Sort!</button>
+    </div>
+
+    <div class="array-container" id="array-container"></div>
+
+    <script>
+        let steps = [];
+        let currentStep = 0;
+
+        // Function to update the header with the selected algorithm
+        function updateHeader() {
+            // Removed the redundant display of the selected algorithm
+        }
+
+        // Function to send the array to the backend and start sorting
+        function startSort() {
+            const arrayInput = document.getElementById('array-input').value;
+            const array = arrayInput.split(',').map(Number);
+            const algorithm = document.getElementById('algorithm-select').value; // Get selected algorithm
+
+            fetch('/sort', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ array, algorithm }), // Send algorithm choice
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    steps = data;
+                    currentStep = 0;
+                    visualizeStep();
+                }
+            });
+        }
+
+        // Function to visualize each step
+        function visualizeStep() {
+            const container = document.getElementById('array-container');
+            container.innerHTML = '';  // Clear the container
+
+            const currentArray = steps[currentStep];
+            currentArray.forEach(value => {
+                const bar = document.createElement('div');
+                bar.classList.add('array-bar');
+                bar.style.height = value * 20 + 'px';  // Scale the bar height
+
+                // Create a number element and append it to the bar
+                const number = document.createElement('div');
+                number.classList.add('array-number');
+                number.textContent = value; // Set the number text
+
+                bar.appendChild(number); // Append number to bar
+                container.appendChild(bar); // Append bar to container
+            });
+
+            // Move to the next step after a short delay
+            currentStep++;
+            if (currentStep < steps.length) {
+                setTimeout(visualizeStep, 500);  // Adjust the delay for speed control
+            }
+        }
+
+        // Initialize header on page load
+        updateHeader();
+    </script>
+    <script>
+        function getRandomInts(count, min, max) {
+            const nums = [];
+            for (let i = 0; i < count; i++) {
+                nums.push(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            return nums.join(','); // Join them into a comma-separated string
+        }
+    
+        window.onload = function() {
+            const randomNumbers = getRandomInts(10, 1, 15); // Generate 10 random integers between 1 and 15
+            document.getElementById('array-input').value = randomNumbers; // Set the value of the input
+        };
+    </script>
+</body>
+</html>
